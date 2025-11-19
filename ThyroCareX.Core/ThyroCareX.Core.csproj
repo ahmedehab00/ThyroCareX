@@ -7,13 +7,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Feature\" />
-    <Folder Include="Mapping\" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+    <PackageReference Include="FluentValidation" Version="12.1.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.0" />
+    <PackageReference Include="MediatR" Version="13.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
+    <PackageReference Include="SkiaSharp" Version="3.119.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MediatR" Version="13.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
+    <ProjectReference Include="..\ThyroCareX.Data\ThyroCareX.Data.csproj" />
+    <ProjectReference Include="..\ThyroCareX.Infrastructure\ThyroCareX.Infrastructure.csproj" />
+    <ProjectReference Include="..\ThyroCareX.Service\ThyroCareX.Service.csproj" />
   </ItemGroup>
 
 </Project>

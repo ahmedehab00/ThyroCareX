@@ -6,4 +6,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="3.119.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ThyroCareX.Data\ThyroCareX.Data.csproj" />
+    <ProjectReference Include="..\ThyroCareX.Infrastructure\ThyroCareX.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

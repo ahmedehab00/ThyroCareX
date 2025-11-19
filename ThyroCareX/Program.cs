@@ -1,5 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using ThyroCareX.Core;
+using ThyroCareX.Infrastructure;
 using ThyroCareX.Infrastructure.Context;
+using ThyroCareX.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +11,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString"));
 });
+#region Dependancy Injection 
+builder.Services.AddInfrastructureDependencies()
+                .AddServiceDependencies()
+                .AddCoreDependencies();
+#endregion
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
