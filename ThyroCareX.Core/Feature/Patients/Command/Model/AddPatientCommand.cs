@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,10 +10,11 @@ using ThyroCareX.Data.Enums;
 
 namespace ThyroCareX.Core.Feature.Patients.Command.Model
 {
-    public class AddPatientCommand:IRequest<Response<string>>
+    public class AddPatientCommand:IRequest<Response<int>>
     {
         public string FullName { get; set; }
         public DateTime DateOfBirth { get; set; }
+        public int Age { get; set; }
         public Gender Gender { get;  set; }
 
         public double Height { get;  set; }

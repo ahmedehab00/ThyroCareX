@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using ThyroCareX.Data.Healpers;
 using ThyroCareX.Data.Models.Identity;
 using ThyroCareX.Infrastructure.Context;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace ThyroCareX.Infrastructure
 {
@@ -117,7 +118,7 @@ namespace ThyroCareX.Infrastructure
             //    });
             //});
 
-            //Swagger Gn
+            //Swagger Gen
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ThyroCareX Project", Version = "v1" });

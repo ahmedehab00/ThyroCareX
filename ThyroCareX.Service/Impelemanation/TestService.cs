@@ -59,5 +59,10 @@ namespace ThyroCareX.Service.Impelemanation
             await _testRepository.UpdateAsync(test);
             return "Test updated successfully.";
         }
+
+        public async Task<List<Test>> GetTestsByPatientIdAsync(int patientId)
+        {
+            return await _testRepository.GetTestsByPatientIdWithResultsAsync(patientId);
+        }
     }
 }

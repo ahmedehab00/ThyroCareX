@@ -37,6 +37,8 @@ builder.Services.AddHangfireServer();
 
 
 // Add Serilog
+// Add Serilog
+
 builder.Host.UseSerilog((context, services, configuration) =>
     configuration
         .ReadFrom.Configuration(context.Configuration)
@@ -50,7 +52,12 @@ builder.Services.AddInfrastructureDependencies()
                 .AddServiceRegisteration(builder.Configuration); ;
 #endregion
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 
 var CORS = "_cors";
@@ -61,8 +68,22 @@ builder.Services.AddCors(options =>
                       {
                           policy.AllowAnyHeader();
                           policy.AllowAnyMethod();
-                          policy.WithOrigins("https://thyro-care-x-6jdn.vercel.app");
+                          // Web origins (existing)
+                          policy.WithOrigins("https://thyro-care-x-6jdn.vercel.app",
+                                            "http://localhost:5173",
+                                            "http://localhost:5174",
+                                            "http://localhost:5175")
+                                .AllowAnyHeader()
+                                .AllowAnyMethod();
                       });
+
+    // Separate open policy for mobile app (Syrux) — no fixed origin
+    options.AddPolicy("_mobileCors", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
 });
 
 
@@ -73,8 +94,8 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-    c.RoutePrefix = ""; // عشان تفتح Swagger على الرابط الأساسي
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "ThyroCareX Web API v1");
+    c.RoutePrefix = ""; // فتح Swagger على الرابط الأساسي
 });
 
 
@@ -82,7 +103,18 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 app.UseCors(CORS);
-app.UseStaticFiles();
+var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+provider.Mappings[".glb"] = "model/gltf-binary";
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = provider,
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "*");
+    }
+});
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();

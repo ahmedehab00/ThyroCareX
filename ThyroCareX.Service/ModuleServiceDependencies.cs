@@ -22,11 +22,11 @@ namespace ThyroCareX.Service
             services.AddScoped<IPaymentService, PayMobService>();
             services.AddScoped<IMedicalHistoryServices, MedicalHistoryService>();
             services.AddScoped<ITestService, TestService>();
-            services.AddScoped<ITestProcessingJob, TestProcessingJob>();
             services.AddHttpClient<IAIService, AIService>();
 
             services.AddScoped<IImageService,ImageService>();
-            
+            services.AddScoped<IDashboardService, DashboardService>();
+            services.AddScoped<IContactService, ContactService>();
             
             return services;
         }

@@ -16,5 +16,6 @@ namespace ThyroCareX.Service.Abstarct
         Task SaveDiagnosisAsync(DiagnosisResult diagnosis);
         Task<DiagnosisResult?> GetDiagnosisByTestIdAsync(int testId);
         Task UpdateDiagnosisAsync(DiagnosisResult diagnosis);
+        Task<List<Test>> GetTestsByPatientIdAsync(int patientId);
     }
 }

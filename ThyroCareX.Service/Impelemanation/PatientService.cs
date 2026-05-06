@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +25,11 @@ namespace ThyroCareX.Service.Impelemanation
         #region Handle Functions
         public Task<List<Patient>> GetAllPatientsIncudelWithDoctorAsync()
         {
-            var patients = _patientRepository.GetTableNoTracking().Include(p => p.Doctor).ToListAsync();
+            var patients = _patientRepository.GetTableNoTracking()
+                .Include(p => p.Doctor)
+                .Include(p => p.Tests)
+                    .ThenInclude(t => t.DiagnosisResult)
+                .ToListAsync();
             return patients;
 
         }
@@ -33,12 +37,18 @@ namespace ThyroCareX.Service.Impelemanation
         {
             return await _patientRepository.GetTableNoTracking()
                  .Where(p => p.DoctorID == doctorId)
+                 .Include(p => p.Tests)
+                    .ThenInclude(t => t.DiagnosisResult)
                  .ToListAsync();
 
         }
         public async Task<Patient> GetPatientByIdAsync(int id)
         {
-            var patient = await _patientRepository.GetByIdAsync(id);
+            var patient = await _patientRepository.GetTableNoTracking()
+                .Where(x => x.Id == id)
+                .Include(p => p.Tests)
+                    .ThenInclude(t => t.DiagnosisResult)
+                .FirstOrDefaultAsync();
             return patient;
         }
         public async Task<string> AddAsync(Patient patient)
@@ -56,7 +66,7 @@ namespace ThyroCareX.Service.Impelemanation
         public async Task<string> DeleteAsync(Patient patient)
         {
             await _patientRepository.DeleteAsync(patient);
-            return "patient deleted succrssfully";
+            return "Patient Deleted Successfully";
 
         }
        

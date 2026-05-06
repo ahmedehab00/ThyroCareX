@@ -25,5 +25,14 @@ namespace ThyroCareX.Infrastructure.Repository
                 .Include(t => t.Patient)
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
+
+        public async Task<List<Test>> GetTestsByPatientIdWithResultsAsync(int patientId)
+        {
+            return await _tests
+                .Include(t => t.DiagnosisResult)
+                .Where(t => t.PatientId == patientId)
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+        }
     }
 }

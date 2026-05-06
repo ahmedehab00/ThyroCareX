@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -9,6 +9,7 @@ using ThyroCareX.Core.Bases;
 using ThyroCareX.Core.Feature.Patients.Queries.Models;
 using ThyroCareX.Core.Feature.Patients.Queries.Result;
 using ThyroCareX.Service.Abstarct;
+using ThyroCareX.Core.Feature.Patients.Command.Model;
 
 namespace ThyroCareX.Core.Feature.Patients.Queries.Handler
 {
@@ -16,6 +17,7 @@ namespace ThyroCareX.Core.Feature.Patients.Queries.Handler
                                           ,IRequestHandler<GetPatientListQuery,Response<List<GetPatientListResponse>> >
                                           ,IRequestHandler<GetPatientListQueryByDoctor,Response<List<GetPatientListResponseByDoctor>>>
                                           ,IRequestHandler<GetPatientByIdQuery,Response<GetPatientByIdResponse>>
+                                          ,IRequestHandler<DeletePatientCommand,Response<string>>
     {
 
         #region Fields
@@ -73,6 +75,18 @@ namespace ThyroCareX.Core.Feature.Patients.Queries.Handler
             var mappedPatient =_mapper.Map<GetPatientByIdResponse>(patient);
             //Return the successful response with mapped data
             return Success(mappedPatient);
+        }
+
+        public async Task<Response<string>> Handle(DeletePatientCommand request, CancellationToken cancellationToken)
+        {
+            var patient = await _patientService.GetPatientByIdAsync(request.PatientID);
+            if (patient == null)
+            {
+                return NotFound<string>("Patient not found");
+            }
+
+            var result = await _patientService.DeleteAsync(patient);
+            return Success(result);
         }
 
         #endregion

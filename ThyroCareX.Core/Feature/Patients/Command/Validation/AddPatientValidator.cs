@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,10 +23,10 @@ namespace ThyroCareX.Core.Feature.Patients.Command.Validation
               .NotEmpty().WithMessage("Full name is required")
               .MaximumLength(100).WithMessage("Full name must not exceed 100 characters");
 
-            // Date Of Birth
-            RuleFor(x => x.DateOfBirth)
-                .NotEmpty().WithMessage("Date of birth is required")
-                .LessThan(DateTime.Now).WithMessage("Date of birth must be in the past");
+            // Age (Required - Admission uses age only)
+            RuleFor(x => x.Age)
+                .GreaterThan(0).WithMessage("Age is required")
+                .LessThanOrEqualTo(120).WithMessage("Age must be less than or equal to 120");
 
             // Gender
             RuleFor(x => x.Gender)
@@ -34,11 +34,11 @@ namespace ThyroCareX.Core.Feature.Patients.Command.Validation
 
             // Height
             RuleFor(x => x.Height)
-                .GreaterThan(0).WithMessage("Height must be greater than 0");
+                .GreaterThanOrEqualTo(0).WithMessage("Height must be greater than or equal to 0");
 
             // Weight
             RuleFor(x => x.Weight)
-                .GreaterThan(0).WithMessage("Weight must be greater than 0");
+                .GreaterThanOrEqualTo(0).WithMessage("Weight must be greater than or equal to 0");
 
             // Phone Number
             RuleFor(x => x.PhoneNumber)

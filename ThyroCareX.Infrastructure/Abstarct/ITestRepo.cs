@@ -11,5 +11,6 @@ namespace ThyroCareX.Infrastructure.Abstarct
     public interface ITestRepo: IGenericRepositoryAsync<Test>
     {
         Task<Test?> GetTestByIdWithPatientAsync(int id);
+        Task<List<Test>> GetTestsByPatientIdWithResultsAsync(int patientId);
     }
 }
