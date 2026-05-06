@@ -58,6 +58,8 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 
 var CORS = "_cors";
 builder.Services.AddCors(options =>
