@@ -37,6 +37,8 @@ builder.Services.AddHangfireServer();
 
 
 // Add Serilog
+// Add Serilog
+
 builder.Host.UseSerilog((context, services, configuration) =>
     configuration
         .ReadFrom.Configuration(context.Configuration)
