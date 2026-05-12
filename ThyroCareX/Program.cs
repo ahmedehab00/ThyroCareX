@@ -10,6 +10,7 @@ using ThyroCareX.Data.Healpers;
 using ThyroCareX.Data.Models.Identity;
 using Hangfire;
 using Hangfire.SqlServer;
+using ThyroCareX.Core.Hubs;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -50,6 +51,8 @@ builder.Services.AddInfrastructureDependencies()
                 .AddServiceDependencies()
                 .AddCoreDependencies()
                 .AddServiceRegisteration(builder.Configuration); ;
+
+builder.Services.AddSignalR();
 #endregion
 
 builder.Services.AddControllers()
@@ -73,9 +76,13 @@ builder.Services.AddCors(options =>
                           policy.WithOrigins("https://thyro-care-x-6jdn.vercel.app",
                                             "http://localhost:5173",
                                             "http://localhost:5174",
+                                            "http://localhost:3000",
+                                            "http://localhost:8081",
+                                            "http://192.168.1.6:8081",
                                             "http://localhost:5175")
                                 .AllowAnyHeader()
-                                .AllowAnyMethod();
+                                .AllowAnyMethod()
+                                .AllowCredentials();
                       });
 
     // Separate open policy for mobile app (Syrux) — no fixed origin
@@ -130,6 +137,7 @@ using (var scope = app.Services.CreateScope())
 #endregion
 
 app.MapControllers();
+app.MapHub<ChatHub>("/chatHub");
 
 app.UseHangfireDashboard("/hangfire"); // Optional: adds a dashboard at /hangfire
 

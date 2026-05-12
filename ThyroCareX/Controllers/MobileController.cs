@@ -50,6 +50,7 @@ namespace ThyroCareX.Controllers
                 PhoneNumber        = data.PhoneNumber,
                 Address            = data.Address,
                 RegistrationAt     = data.RegistrationAt,
+                DoctorID           = data.DoctorID,
                 Height             = data.Height,
                 Weight             = data.Weight,
                 MedicalHistory     = data.MedicalHistory,

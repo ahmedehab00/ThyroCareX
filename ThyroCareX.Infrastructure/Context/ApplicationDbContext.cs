@@ -28,6 +28,7 @@ namespace ThyroCareX.Infrastructure.Context
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<Test> Tests { get; set; }
         public DbSet<DiagnosisResult> DiagnosisResults { get; set; }
+        public DbSet<Message> Messages { get; set; }
 
 
 

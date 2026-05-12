@@ -19,6 +19,7 @@ namespace ThyroCareX.Core.Feature.Patients.Queries.Result
         public string PhoneNumber { get; set; } = string.Empty;
         public string? Address { get; set; }
         public DateTime RegistrationAt { get; set; }
+        public int? DoctorID { get; set; }
 
         // Physical info
         public double Height { get; set; }
