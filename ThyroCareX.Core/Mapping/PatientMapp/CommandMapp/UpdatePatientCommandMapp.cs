@@ -14,7 +14,8 @@ namespace ThyroCareX.Core.Mapping.PatientMapp
         {
             CreateMap<EditPatientCommand, Patient>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PatientID))
-                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => DateTime.UtcNow.Date.AddYears(-src.Age)));
+                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => DateTime.UtcNow.Date.AddYears(-src.Age)))
+                .ForMember(dest => dest.DoctorID, opt => opt.Ignore());
         }
     }
 }

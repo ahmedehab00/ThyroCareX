@@ -12,6 +12,8 @@ namespace ThyroCareX.Service.Abstarct
         Task<List<Patient>> GetAllPatientsIncudelWithDoctorAsync();
         Task<List<Patient>> GetAllPatientsByDoctorAsync(int doctorId);
         Task<Patient>GetPatientByIdAsync(int id);
+        /// <summary>Tracked entity for updates (includes navigation graphs as loaded).</summary>
+        Task<Patient?> GetPatientByIdForUpdateAsync(int id);
         Task<string> AddAsync(Patient patient);
         Task<string> EditAsync(Patient patient);
         Task<string> DeleteAsync(Patient patient);

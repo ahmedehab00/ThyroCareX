@@ -51,6 +51,11 @@ namespace ThyroCareX.Service.Impelemanation
                 .FirstOrDefaultAsync();
             return patient;
         }
+
+        public async Task<Patient?> GetPatientByIdForUpdateAsync(int id)
+        {
+            return await _patientRepository.GetByIdAsync(id);
+        }
         public async Task<string> AddAsync(Patient patient)
         {
             await _patientRepository.AddAsync(patient);

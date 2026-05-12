@@ -78,5 +78,18 @@ namespace ThyroCareX.Controllers
             var response = await Mediator.Send(command);
             return Ok(response);
         }
+        /// <summary>
+        /// Compares two diagnostic tests and provides a trend analysis.
+        /// </summary>
+        /// <param name="testId1">First test ID.</param>
+        /// <param name="testId2">Second test ID.</param>
+        /// <returns>Comparison result including biomarker trends and overall status.</returns>
+        [HttpGet("CompareTests/{testId1}/{testId2}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> CompareTests([FromRoute] int testId1, [FromRoute] int testId2)
+        {
+            var response = await Mediator.Send(new CompareTestsQuery(testId1, testId2));
+            return Ok(response);
+        }
     }
 }

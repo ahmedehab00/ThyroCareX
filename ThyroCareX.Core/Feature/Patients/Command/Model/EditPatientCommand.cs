@@ -20,5 +20,12 @@ namespace ThyroCareX.Core.Feature.Patients.Command.Model
         public string PhoneNumber { get; set; }
         public string Address { get; set; }
         public int DoctorID { get; set; }
+
+        /// <summary>Same admission fields as <see cref="AddPatientCommand"/> for re-diagnosis parity.</summary>
+        public double Height { get; set; }
+        public double Weight { get; set; }
+        public string MedicalHistory { get; set; } = string.Empty;
+        public string CurrentMedications { get; set; } = string.Empty;
+        public string KnownAllergies { get; set; } = string.Empty;
     }
 }

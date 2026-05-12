@@ -30,6 +30,11 @@ namespace ThyroCareX.Core.Feature.Patients.Command.Validation
             RuleFor(x => x.Age)
                 .GreaterThan(0).WithMessage("Age is required")
                 .LessThanOrEqualTo(120).WithMessage("Age must be less than or equal to 120");
+
+            RuleFor(x => x.Height)
+                .GreaterThanOrEqualTo(0).WithMessage("Height must be greater than or equal to 0");
+            RuleFor(x => x.Weight)
+                .GreaterThanOrEqualTo(0).WithMessage("Weight must be greater than or equal to 0");
         }
     }
 }

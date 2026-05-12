@@ -67,17 +67,14 @@ namespace ThyroCareX.Core.Feature.Patients.Command.Handler
 
         public async Task<Response<string>> Handle(EditPatientCommand request, CancellationToken cancellationToken)
         {
-            var patient = await _patientService.GetPatientByIdAsync(request.PatientID);
+            var patient = await _patientService.GetPatientByIdForUpdateAsync(request.PatientID);
             if (patient == null)
             {
                 return NotFound<string>("Patient not found");
             }
 
-            // Map the Requst to Patient entity
-            var PatientMapper = _mapper.Map<Patient>(request);
-            // Call the Service to Update Patient
-            var result = await _patientService.EditAsync(PatientMapper);
-            // Return Response
+            _mapper.Map(request, patient);
+            var result = await _patientService.EditAsync(patient);
             return Success(result);
         }
 
