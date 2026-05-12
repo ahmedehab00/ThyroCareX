@@ -9,5 +9,7 @@ namespace ThyroCareX.Service.Abstarct
         Task SaveMessageAsync(Message message);
         Task<List<Message>> GetChatHistoryAsync(string user1Id, string user2Id);
         Task MarkAsReadAsync(string receiverId, string senderId);
+        Task<int> GetUnreadCountAsync(string userId);
+        Task<List<Message>> GetRecentNotificationsAsync(string userId);
     }
 }

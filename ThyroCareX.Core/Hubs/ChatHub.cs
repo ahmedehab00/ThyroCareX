@@ -9,6 +9,13 @@ namespace ThyroCareX.Core.Hubs
 {
     public class ChatHub : Hub
     {
+        private readonly ThyroCareX.Infrastructure.Context.ApplicationDbContext _context;
+
+        public ChatHub(ThyroCareX.Infrastructure.Context.ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
         // Dictionary to track online users: Key is UserId (as string), Value is set of ConnectionIds
         private static readonly ConcurrentDictionary<string, HashSet<string>> OnlineUsers = new();
 
@@ -44,6 +51,18 @@ namespace ThyroCareX.Core.Hubs
 
         public async Task SendMessage(string senderId, string receiverId, string content, string? imageUrl, string senderType)
         {
+            string? senderName = "User";
+            if (senderType == "Patient")
+            {
+                var p = await _context.Patients.FindAsync(int.Parse(senderId));
+                senderName = p?.FullName;
+            }
+            else
+            {
+                var d = await _context.Doctors.FindAsync(int.Parse(senderId));
+                senderName = d?.FullName;
+            }
+
             // Prepare the message object (to be sent to client)
             var message = new
             {
@@ -52,7 +71,9 @@ namespace ThyroCareX.Core.Hubs
                 Content = content,
                 ImageUrl = imageUrl,
                 SenderType = senderType,
-                SentAt = DateTime.UtcNow
+                SentAt = DateTime.UtcNow,
+                Patient = senderType == "Patient" ? new { FullName = senderName } : null,
+                Doctor = senderType == "Doctor" ? new { FullName = senderName } : null
             };
 
             // Send to receiver if online

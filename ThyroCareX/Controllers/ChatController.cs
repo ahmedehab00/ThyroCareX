@@ -41,6 +41,20 @@ namespace ThyroCareX.Controllers
             return Ok();
         }
 
+        [HttpGet("UnreadCount/{userId}")]
+        public async Task<IActionResult> GetUnreadCount(string userId)
+        {
+            var count = await _chatService.GetUnreadCountAsync(userId);
+            return Ok(count);
+        }
+
+        [HttpGet("Notifications/{userId}")]
+        public async Task<IActionResult> GetNotifications(string userId)
+        {
+            var notifications = await _chatService.GetRecentNotificationsAsync(userId);
+            return Ok(notifications);
+        }
+
         [HttpPost("UploadImage")]
         public async Task<IActionResult> UploadImage([FromForm] IFormFile image, [FromForm] string senderId, [FromForm] string receiverId)
         {

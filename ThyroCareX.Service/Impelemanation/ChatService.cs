@@ -45,5 +45,23 @@ namespace ThyroCareX.Service.Impelemanation
 
             await _context.SaveChangesAsync();
         }
+
+        public async Task<int> GetUnreadCountAsync(string userId)
+        {
+            return await _context.Messages
+                .Where(m => m.ReceiverId == userId && !m.IsRead)
+                .CountAsync();
+        }
+
+        public async Task<List<Message>> GetRecentNotificationsAsync(string userId)
+        {
+            return await _context.Messages
+                .Where(m => m.ReceiverId == userId && !m.IsRead)
+                .Include(m => m.Patient)
+                .Include(m => m.Doctor)
+                .OrderByDescending(m => m.SentAt)
+                .Take(10)
+                .ToListAsync();
+        }
     }
 }
