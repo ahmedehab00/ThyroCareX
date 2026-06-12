@@ -33,26 +33,29 @@ namespace ThyroCareX.Service.Impelemanation
             var apiKey = _configuration["AISettings:ApiKey"];
             _httpClient.DefaultRequestHeaders.Add("X-AI-Service-Key", apiKey);
         }
-        public async Task<ImageAIResponse> PredictImageAsync(string imagePath)
+        public async Task<List<ImageAIResponse>> PredictImageAsync(IEnumerable<string> imagePaths)
         {
-            var fullPath = Path.Combine(_env.WebRootPath ?? "wwwroot", imagePath.TrimStart('/'));
-            if (!File.Exists(fullPath))
-                throw new FileNotFoundException($"Image file not found at: {fullPath}");
-
             using var form = new MultipartFormDataContent();
-            var fileBytes = await File.ReadAllBytesAsync(fullPath);
-            var byteContent = new ByteArrayContent(fileBytes);
             
-            // Set Content-Type
-            var extension = Path.GetExtension(fullPath).ToLower();
-            byteContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
-                extension == ".png" ? "image/png" : "image/jpeg"
-            );
+            foreach (var imagePath in imagePaths)
+            {
+                var fullPath = Path.Combine(_env.WebRootPath ?? "wwwroot", imagePath.TrimStart('/'));
+                if (!File.Exists(fullPath)) continue;
 
-            form.Add(byteContent, "file", Path.GetFileName(fullPath));
+                var fileBytes = await File.ReadAllBytesAsync(fullPath);
+                var byteContent = new ByteArrayContent(fileBytes);
+                
+                // Set Content-Type
+                var extension = Path.GetExtension(fullPath).ToLower();
+                byteContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
+                    extension == ".png" ? "image/png" : "image/jpeg"
+                );
+
+                form.Add(byteContent, "files", Path.GetFileName(fullPath));
+            }
 
             var response = await _httpClient.PostAsync(
-                "https://amer003100-thyraxcdss.hf.space/image/predict",
+                "https://amer003100-thyraxcdss.hf.space/image/predict?force=false",
                 form
             );
 
@@ -70,30 +73,39 @@ namespace ThyroCareX.Service.Impelemanation
 
             try
             {
-                var parsed = JsonSerializer.Deserialize<ImageAIResponse>(raw, options);
-                if (parsed == null)
+                var parsedList = JsonSerializer.Deserialize<List<ImageAIResponse>>(raw, options);
+                if (parsedList == null)
                     throw new JsonException("Empty JSON response from AI image endpoint.");
 
-                NormalizeImageUrls(parsed);
-                return parsed;
+                foreach (var parsed in parsedList)
+                {
+                    NormalizeImageUrls(parsed);
+                }
+                return parsedList;
             }
             catch (JsonException)
             {
-                // Fallback parser for schema drift (e.g. classification as string instead of object).
+                // Fallback parser for schema drift if array parsing fails
+                var list = new List<ImageAIResponse>();
                 using var doc = JsonDocument.Parse(raw);
-                var root = doc.RootElement;
-
-                var parsed = new ImageAIResponse
+                if (doc.RootElement.ValueKind == JsonValueKind.Array)
                 {
-                    Status = TryGetString(root, "status") ?? "success",
-                    Message = TryGetString(root, "message"),
-                    Bbox = TryGetIntList(root, "bbox"),
-                    Classification = ParseClassification(root),
-                    Images = ParseImages(root)
-                };
+                    foreach (var root in doc.RootElement.EnumerateArray())
+                    {
+                        var parsed = new ImageAIResponse
+                        {
+                            Status = TryGetString(root, "status") ?? "success",
+                            Message = TryGetString(root, "message") ?? TryGetString(root, "ai_recommendation"),
+                            Bbox = TryGetIntList(root, "bbox"),
+                            Classification = ParseClassification(root),
+                            Images = ParseImages(root)
+                        };
 
-                NormalizeImageUrls(parsed);
-                return parsed;
+                        NormalizeImageUrls(parsed);
+                        list.Add(parsed);
+                    }
+                }
+                return list;
             }
         }
         public async Task<ClinicalAIResponse> AssessClinicalAsync(ClinicalRequest request)
@@ -142,32 +154,37 @@ namespace ThyroCareX.Service.Impelemanation
 
             return await response.Content.ReadFromJsonAsync<FnacAIResponse>();
         }
-        public async Task<bool> ValidateUltrasoundAsync(string imagePath)
+        public async Task<List<UltrasoundValidationResponse>> ValidateUltrasoundAsync(IEnumerable<string> imagePaths)
         {
-            var fullPath = Path.Combine(_env.WebRootPath ?? "wwwroot", imagePath.TrimStart('/'));
-
             using var form = new MultipartFormDataContent();
-            var fileBytes = await File.ReadAllBytesAsync(fullPath);
-            var byteContent = new ByteArrayContent(fileBytes);
 
-            var extension = Path.GetExtension(fullPath).ToLower();
-            byteContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
-                extension == ".png" ? "image/png" : "image/jpeg"
-            );
+            foreach (var imagePath in imagePaths)
+            {
+                var fullPath = Path.Combine(_env.WebRootPath ?? "wwwroot", imagePath.TrimStart('/'));
+                if (!File.Exists(fullPath)) continue;
 
-            form.Add(byteContent, "file", Path.GetFileName(fullPath));
+                var fileBytes = await File.ReadAllBytesAsync(fullPath);
+                var byteContent = new ByteArrayContent(fileBytes);
+
+                var extension = Path.GetExtension(fullPath).ToLower();
+                byteContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
+                    extension == ".png" ? "image/png" : "image/jpeg"
+                );
+
+                form.Add(byteContent, "files", Path.GetFileName(fullPath));
+            }
 
             var response = await _httpClient.PostAsync(
-                "https://amer003100-thyraxcdss.hf.space/image/validate",
+                "https://amer003100-thyraxcdss.hf.space/image/validate?force=false",
                 form
             );
 
             if (!response.IsSuccessStatusCode)
-                return false;
+                return new List<UltrasoundValidationResponse>();
 
-            var result = await response.Content.ReadFromJsonAsync<UltrasoundValidationResponse>();
+            var result = await response.Content.ReadFromJsonAsync<List<UltrasoundValidationResponse>>();
 
-            return result?.IsUltrasound == true;
+            return result ?? new List<UltrasoundValidationResponse>();
         }
         public async Task<ChatAIResponse> ChatAsync(string query, string sessionId, string chatHistory, string? imagePath = null)
         {
@@ -321,9 +338,21 @@ namespace ThyroCareX.Service.Impelemanation
 
     }
 
-    internal class UltrasoundValidationResponse
+    public class UltrasoundValidationResponse
     {
+        [JsonPropertyName("filename")]
+        public string Filename { get; set; }
+
         [JsonPropertyName("is_ultrasound")]
         public bool IsUltrasound { get; set; }
+
+        [JsonPropertyName("confidence")]
+        public double Confidence { get; set; }
+
+        [JsonPropertyName("reason")]
+        public string Reason { get; set; }
+
+        [JsonPropertyName("status")]
+        public string Status { get; set; }
     }
 }

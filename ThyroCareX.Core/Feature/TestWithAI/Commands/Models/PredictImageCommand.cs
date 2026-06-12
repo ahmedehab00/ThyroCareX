@@ -6,9 +6,9 @@ using ThyroCareX.Core.Dto.ImageAIResponse;
 
 namespace ThyroCareX.Core.Feature.TestWithAI.Commands.Models
 {
-    public class PredictImageCommand : IRequest<Response<ImageAIResponse>>
+    public class PredictImageCommand : IRequest<Response<List<ImageAIResponse>>>
     {
         public int TestId { get; set; }
-       public IFormFile UltraSoundImage { get; set;  }
+        public List<IFormFile> UltraSoundImages { get; set; }
     }
 }

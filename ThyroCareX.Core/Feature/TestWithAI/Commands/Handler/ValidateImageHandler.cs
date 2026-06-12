@@ -6,7 +6,7 @@ using ThyroCareX.Service.Impelemanation;
 
 namespace ThyroCareX.Core.Feature.TestWithAI.Commands.Handler
 {
-    public class ValidateImageHandler : ResponseHandler, IRequestHandler<ValidateImageCommand, Response<bool>>
+    public class ValidateImageHandler : ResponseHandler, IRequestHandler<ValidateImageCommand, Response<List<UltrasoundValidationResponse>>>
     {
         private readonly IAIService _aiService;
         private readonly IImageService _imageService;
@@ -17,42 +17,36 @@ namespace ThyroCareX.Core.Feature.TestWithAI.Commands.Handler
             _imageService = imageService;
         }
 
-        public async Task<Response<bool>> Handle(ValidateImageCommand request, CancellationToken cancellationToken)
+        public async Task<Response<List<UltrasoundValidationResponse>>> Handle(ValidateImageCommand request, CancellationToken cancellationToken)
         {
-            if (request.ImageFile == null || request.ImageFile.Length == 0)
+            if (request.ImageFiles == null || request.ImageFiles.Count == 0)
             {
-                return BadRequest<bool>("Image file is required");
+                return BadRequest<List<UltrasoundValidationResponse>>("Image files are required");
             }
 
-            string imagePath;
+            var imagePaths = new List<string>();
             try
             {
-                imagePath = await _imageService.UploadFileAsync(request.ImageFile);
+                foreach (var file in request.ImageFiles)
+                {
+                    var path = await _imageService.UploadFileAsync(file);
+                    imagePaths.Add(path);
+                }
             }
             catch (Exception ex)
             {
-                return BadRequest<bool>($"Failed to upload image: {ex.Message}");
+                return BadRequest<List<UltrasoundValidationResponse>>($"Failed to upload images: {ex.Message}");
             }
 
             try
             {
-                var isValid = await _aiService.ValidateUltrasoundAsync(imagePath);
+                var validationResults = await _aiService.ValidateUltrasoundAsync(imagePaths);
                 
-                // Optional: We can delete the temporary image if we want, but since it might be used later for PredictImage
-                // Or PredictImage will upload it again. Let's keep it simple.
-
-                if (isValid)
-                {
-                    return Success(true, "Image is a valid ultrasound.");
-                }
-                else
-                {
-                    return Success(false, "Image does not appear to be a medical ultrasound.");
-                }
+                return Success(validationResults, "Images validated successfully.");
             }
             catch (Exception ex)
             {
-                return BadRequest<bool>($"Ultrasound validation failed: {ex.Message}");
+                return BadRequest<List<UltrasoundValidationResponse>>($"Ultrasound validation failed: {ex.Message}");
             }
         }
     }
