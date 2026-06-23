@@ -10,7 +10,7 @@ namespace ThyroCareX.Data.Healpers.ClinicalAI
     public class ClinicalRequest
     {
         [JsonPropertyName("patient_id")]
-        public int PatientId { get; set; }
+        public string PatientId { get; set; }
 
         public int Age { get; set; }
 

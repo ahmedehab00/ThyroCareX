@@ -105,7 +105,25 @@ namespace ThyroCareX.Core.Feature.TestWithAI.Commands.Handler
                 diagnosis.RoiImageUrl = string.IsNullOrEmpty(diagnosis.RoiImageUrl) ? (aiResponse.Images.Roi_Url ?? "") : diagnosis.RoiImageUrl + "," + (aiResponse.Images.Roi_Url ?? "");
             }
 
-            diagnosis.RawResponse = System.Text.Json.JsonSerializer.Serialize(aiResponses);
+            List<ImageAIResponse> allImageResponses = new List<ImageAIResponse>();
+            if (!string.IsNullOrEmpty(diagnosis.RawResponse))
+            {
+                try
+                {
+                    if (diagnosis.RawResponse.TrimStart().StartsWith("["))
+                    {
+                        var existing = System.Text.Json.JsonSerializer.Deserialize<List<ImageAIResponse>>(diagnosis.RawResponse);
+                        if (existing != null)
+                        {
+                            allImageResponses.AddRange(existing);
+                        }
+                    }
+                }
+                catch { }
+            }
+            allImageResponses.AddRange(aiResponses);
+
+            diagnosis.RawResponse = System.Text.Json.JsonSerializer.Serialize(allImageResponses);
 
             if (diagnosis.Id == 0)
                 await _testService.SaveDiagnosisAsync(diagnosis);

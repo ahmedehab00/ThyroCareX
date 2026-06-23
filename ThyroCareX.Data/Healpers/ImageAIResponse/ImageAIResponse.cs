@@ -9,6 +9,7 @@ namespace ThyroCareX.Core.Dto.ImageAIResponse
 {
     public class ImageAIResponse
     {
+        public string? Filename { get; set; }
         public string Status { get; set; }
 
         public List<int>? Bbox { get; set; }
@@ -18,6 +19,12 @@ namespace ThyroCareX.Core.Dto.ImageAIResponse
         public ImageUrlsDto Images { get; set; }
 
         public string? Message { get; set; }
+
+        [JsonPropertyName("ai_recommendation")]
+        public string? AiRecommendation { get; set; }
+
+        [JsonPropertyName("medical_disclaimer")]
+        public string? MedicalDisclaimer { get; set; }
     }
 
     public class ClassificationDto

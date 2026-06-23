@@ -52,7 +52,7 @@ namespace ThyroCareX.Core.Feature.TestWithAI.Commands.Handler
 
             var test = new Test
             {
-                PatientId = request.ClinicalRequest.PatientId,
+                PatientId = int.Parse(request.ClinicalRequest.PatientId),
                 OnThyroxine = request.ClinicalRequest.OnThyroxine,
                 ThyroidSurgery = request.ClinicalRequest.ThyroidSurgery,
                 QueryHyperthyroid = request.ClinicalRequest.QueryHyperthyroid,
@@ -81,6 +81,7 @@ namespace ThyroCareX.Core.Feature.TestWithAI.Commands.Handler
                     RiskLevel = aiResponse.RiskLevel,
                     ClinicalRecommendation = aiResponse.ClinicalRecommendation,
                     NextStep = aiResponse.NextStep,
+                    Confidence = aiResponse.ModelConfidence,
                     RawResponse = System.Text.Json.JsonSerializer.Serialize(aiResponse)
                 };
 
