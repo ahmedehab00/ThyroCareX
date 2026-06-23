@@ -222,6 +222,52 @@ namespace ThyroCareX.Service.Impelemanation
             return await response.Content.ReadFromJsonAsync<ChatAIResponse>();
         }
 
+        public async IAsyncEnumerable<string> StreamChatAsync(string userMessage, string? sessionId)
+        {
+            // Only send user_message to HF — our internal session_id is unknown to HF and causes 422
+            var payload = new
+            {
+                user_message = userMessage
+            };
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://amer003100-thyraxcdss.hf.space/agent/chat");
+            request.Headers.Add("accept", "application/json");
+            request.Content = JsonContent.Create(payload);
+
+            HttpResponseMessage response = null;
+            bool isError = false;
+            string errorText = "";
+            try
+            {
+                response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                response.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                isError = true;
+                errorText = ex.Message.Replace("\"", "\\\"").Replace("\n", " ");
+            }
+
+            if (isError)
+            {
+                yield return $"data: {{\"status\": \"error\", \"message\": \"AI connection failed: {errorText}. Please try again.\"}}\n";
+                yield break;
+            }
+
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var reader = new StreamReader(stream);
+
+            while (!reader.EndOfStream)
+            {
+                var line = await reader.ReadLineAsync();
+                if (!string.IsNullOrEmpty(line))
+                {
+                    // Yield each SSE line with proper double-newline so client can parse correctly
+                    yield return line + "\n\n";
+                }
+            }
+        }
+
         private static string? TryGetString(JsonElement element, string propertyName)
         {
             if (!element.TryGetProperty(propertyName, out var value))
