@@ -43,7 +43,7 @@ namespace ThyroCareX.Infrastructure
                 option.Lockout.AllowedForNewUsers = true; // الحظر ينطبق كمان على المستخدمين الجدد
 
                 // User settings.
-                option.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+                option.User.AllowedUserNameCharacters = string.Empty;
                 // الحروف المسموح بيها في اسم المستخدم
                 option.User.RequireUniqueEmail = true; // كل مستخدم لازم يكون عنده إيميل فريد
                 option.SignIn.RequireConfirmedEmail = true; // لازم المستخدم يأكد الإيميل قبل الدخول

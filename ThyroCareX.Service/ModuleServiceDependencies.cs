@@ -28,6 +28,7 @@ namespace ThyroCareX.Service
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<IContactService, ContactService>();
             services.AddScoped<IChatService, ChatService>();
+            services.AddScoped<IEmailService, EmailService>();
             
             return services;
         }

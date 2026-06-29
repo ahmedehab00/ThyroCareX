@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Azure.Core;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -20,6 +20,9 @@ namespace ThyroCareX.Core.Feature.Authentication.Command.Handler
 {
     public class AuthentiactionHandler:ResponseHandler,IRequestHandler<RegisterDoctorCommand,Response<string>>
                                                       ,IRequestHandler<SignInCommand,Response<string>>
+                                                      ,IRequestHandler<SendResetPasswordOTPCommand,Response<string>>
+                                                      ,IRequestHandler<VerifyResetPasswordOTPCommand,Response<string>>
+                                                      ,IRequestHandler<ResetPasswordWithOTPCommand,Response<string>>
     {
 
         #region Fields
@@ -30,11 +33,13 @@ namespace ThyroCareX.Core.Feature.Authentication.Command.Handler
         private readonly IMapper _mapper;
         private readonly IAuthentcationService _authService;
         private readonly IImageService _imageService;
+        private readonly IEmailService _emailService;
         #endregion
         #region Constructor
         public AuthentiactionHandler(UserManager<User> userManager, RoleManager<IdentityRole<int>> roleManager
                                      , SignInManager<User> signInManager, IDoctorService doctorService,
-                                       IMapper mapper, IAuthentcationService authService, IImageService imageService)
+                                       IMapper mapper, IAuthentcationService authService, IImageService imageService,
+                                       IEmailService emailService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -43,6 +48,7 @@ namespace ThyroCareX.Core.Feature.Authentication.Command.Handler
             _mapper = mapper;
             _authService = authService;
             _imageService = imageService;
+            _emailService = emailService;
         }
 
 
@@ -135,6 +141,59 @@ namespace ThyroCareX.Core.Feature.Authentication.Command.Handler
             //return the token
             return Success(accesstoken,"Login Successfully");
 
+        }
+
+        public async Task<Response<string>> Handle(SendResetPasswordOTPCommand request, CancellationToken cancellationToken)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email.Trim());
+            if (user == null)
+                return BadRequest<string>("User not found.");
+
+            // Generate a 6-digit OTP
+            var otp = await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
+
+            // Send Email
+            var message = $"<h3>ThyraX Password Reset</h3>" +
+                          $"<p>Your OTP to reset your password is: <strong>{otp}</strong></p>" +
+                          $"<p>If you didn't request this, please ignore this email.</p>";
+
+            var isSent = await _emailService.SendEmailAsync(user.Email, "ThyraX - Password Reset OTP", message);
+            if (!isSent)
+                return BadRequest<string>("Failed to send OTP email.");
+
+            return Success("OTP sent to your email successfully.");
+        }
+
+        public async Task<Response<string>> Handle(VerifyResetPasswordOTPCommand request, CancellationToken cancellationToken)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email.Trim());
+            if (user == null)
+                return BadRequest<string>("User not found.");
+
+            var isOtpValid = await _userManager.VerifyTwoFactorTokenAsync(user, "Email", request.OTP.Trim());
+            if (!isOtpValid)
+                return BadRequest<string>("Invalid or expired OTP.");
+
+            return Success("OTP is valid.");
+        }
+
+        public async Task<Response<string>> Handle(ResetPasswordWithOTPCommand request, CancellationToken cancellationToken)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email.Trim());
+            if (user == null)
+                return BadRequest<string>("User not found.");
+
+            var isOtpValid = await _userManager.VerifyTwoFactorTokenAsync(user, "Email", request.OTP.Trim());
+            if (!isOtpValid)
+                return BadRequest<string>("Invalid or expired OTP.");
+
+            var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, resetToken, request.NewPassword);
+
+            if (!result.Succeeded)
+                return BadRequest<string>(string.Join(", ", result.Errors.Select(e => e.Description)));
+
+            return Success("Password reset successfully.");
         }
 
         #endregion
