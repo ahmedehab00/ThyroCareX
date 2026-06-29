@@ -74,6 +74,7 @@ builder.Services.AddCors(options =>
                           policy.AllowAnyMethod();
                           // Web origins (existing)
                           policy.WithOrigins("https://thyro-care-x-6jdn.vercel.app",
+                                            "https://thyrax.site",
                                             "http://localhost:5173",
                                             "http://localhost:5174",
                                             "http://localhost:3000",

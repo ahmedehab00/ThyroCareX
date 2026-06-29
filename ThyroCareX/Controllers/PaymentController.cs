@@ -33,9 +33,14 @@ namespace ThyroCareX.Controllers
                 await paymentService.UpdateSubscriptionStatus(orderId, success, transactionId);
             }
 
+            // Determine the frontend domain. Both the new domain and Vercel domain are supported.
+            var frontendDomain = query.TryGetValue("source", out var source) && source == "vercel"
+                ? "https://thyro-care-x-6jdn.vercel.app"
+                : "https://thyrax.site";
+
             return success
-                ? Redirect("https://thyro-care-x-6jdn.vercel.app/payment/success")
-                : Redirect("https://thyro-care-x-6jdn.vercel.app/payment/failure");
+                ? Redirect($"{frontendDomain}/payment/success")
+                : Redirect($"{frontendDomain}/payment/failure");
         }
 
         [HttpGet("history")]
