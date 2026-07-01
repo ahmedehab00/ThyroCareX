@@ -92,6 +92,7 @@ namespace ThyroCareX.Controllers
             return Ok(response);
         }
 
+
         /// <summary>
         /// Fetches the AI diagnostic image through the backend to securely pass the AI API key.
         /// </summary>

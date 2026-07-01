@@ -126,22 +126,28 @@ namespace ThyroCareX.Service.Impelemanation
             return await response.Content.ReadFromJsonAsync<ClinicalAIResponse>();
         }
 
-        public async Task<FnacAIResponse> PredictFnacAsync(string imagePath)
+        public async Task<List<FnacAIResponse>> PredictFnacAsync(IEnumerable<string> imagePaths, string sessionId, bool force = false)
         {
-            var fullPath = Path.Combine(_env.WebRootPath ?? "wwwroot", imagePath.TrimStart('/'));
-            if (!File.Exists(fullPath))
-                throw new FileNotFoundException($"FNAC image file not found at: {fullPath}");
-
             using var form = new MultipartFormDataContent();
-            var fileBytes = await File.ReadAllBytesAsync(fullPath);
-            var byteContent = new ByteArrayContent(fileBytes);
-            
-            var extension = Path.GetExtension(fullPath).ToLower();
-            byteContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
-                extension == ".png" ? "image/png" : "image/jpeg"
-            );
 
-            form.Add(byteContent, "file", Path.GetFileName(fullPath));
+            foreach (var imagePath in imagePaths)
+            {
+                var fullPath = Path.Combine(_env.WebRootPath ?? "wwwroot", imagePath.TrimStart('/'));
+                if (!File.Exists(fullPath)) continue;
+
+                var fileBytes = await File.ReadAllBytesAsync(fullPath);
+                var byteContent = new ByteArrayContent(fileBytes);
+                
+                var extension = Path.GetExtension(fullPath).ToLower();
+                byteContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
+                    extension == ".png" ? "image/png" : "image/jpeg"
+                );
+
+                form.Add(byteContent, "files", Path.GetFileName(fullPath));
+            }
+
+            form.Add(new StringContent(sessionId ?? string.Empty), "session_id");
+            form.Add(new StringContent(force.ToString().ToLower()), "force");
 
             var response = await _httpClient.PostAsync(
                 "https://amer003100-thyraxcdss.hf.space/fnac/predict",
@@ -154,7 +160,8 @@ namespace ThyroCareX.Service.Impelemanation
                 throw new HttpRequestException($"AI Service FNAC Predict Error ({response.StatusCode}): {errorBody}");
             }
 
-            return await response.Content.ReadFromJsonAsync<FnacAIResponse>();
+            var result = await response.Content.ReadFromJsonAsync<List<FnacAIResponse>>();
+            return result ?? new List<FnacAIResponse>();
         }
         public async Task<List<UltrasoundValidationResponse>> ValidateUltrasoundAsync(IEnumerable<string> imagePaths)
         {

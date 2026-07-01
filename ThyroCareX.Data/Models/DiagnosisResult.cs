@@ -39,6 +39,7 @@ namespace ThyroCareX.Data.Models
 
         // 🔥 Raw JSON (اختياري مهم جدًا)
         public string? RawResponse { get; set; }
+        public string? FnacRawResponse { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
