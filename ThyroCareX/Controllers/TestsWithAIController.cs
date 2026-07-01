@@ -91,5 +91,37 @@ namespace ThyroCareX.Controllers
             var response = await Mediator.Send(new CompareTestsQuery(testId1, testId2));
             return Ok(response);
         }
+
+        /// <summary>
+        /// Fetches the AI diagnostic image through the backend to securely pass the AI API key.
+        /// </summary>
+        /// <param name="imageId">Image ID from the AI service.</param>
+        /// <returns>The diagnostic image stream.</returns>
+        [HttpGet("ViewImage/{imageId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ViewImage(string imageId)
+        {
+            try
+            {
+                var httpClient = new HttpClient();
+                var config = HttpContext.RequestServices.GetService<Microsoft.Extensions.Configuration.IConfiguration>();
+                var apiKey = config?["AISettings:ApiKey"];
+                httpClient.DefaultRequestHeaders.Add("X-AI-Service-Key", apiKey);
+
+                var response = await httpClient.GetAsync($"https://amer003100-thyraxcdss.hf.space/image/view/{imageId}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    return StatusCode((int)response.StatusCode, "Failed to retrieve image from AI service");
+                }
+
+                var stream = await response.Content.ReadAsStreamAsync();
+                var contentType = response.Content.Headers.ContentType?.ToString() ?? "image/jpeg";
+                return File(stream, contentType);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
     }
 }

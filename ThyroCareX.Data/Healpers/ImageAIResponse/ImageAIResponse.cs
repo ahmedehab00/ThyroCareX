@@ -18,6 +18,8 @@ namespace ThyroCareX.Core.Dto.ImageAIResponse
 
         public ImageUrlsDto Images { get; set; }
 
+        public SegmentationDto? Segmentation { get; set; }
+
         public string? Message { get; set; }
 
         [JsonPropertyName("ai_recommendation")]
@@ -44,6 +46,51 @@ namespace ThyroCareX.Core.Dto.ImageAIResponse
 
         [JsonPropertyName("clinical_recommendation")]
         public string ClinicalRecommendation { get; set; }
+
+        [JsonPropertyName("next_step")]
+        public string? NextStep { get; set; }
+
+        [JsonPropertyName("needs_manual_review")]
+        public bool? NeedsManualReview { get; set; }
+
+        [JsonPropertyName("radiomic_features")]
+        public RadiomicFeaturesDto? RadiomicFeatures { get; set; }
+    }
+
+    public class RadiomicFeaturesDto
+    {
+        [JsonPropertyName("taller_than_wide")]
+        public bool? TallerThanWide { get; set; }
+
+        [JsonPropertyName("solidity")]
+        public double? Solidity { get; set; }
+
+        [JsonPropertyName("circularity")]
+        public double? Circularity { get; set; }
+
+        [JsonPropertyName("irregular_margin")]
+        public bool? IrregularMargin { get; set; }
+
+        [JsonPropertyName("nodule_intensity")]
+        public double? NoduleIntensity { get; set; }
+
+        [JsonPropertyName("tissue_intensity")]
+        public double? TissueIntensity { get; set; }
+
+        [JsonPropertyName("hypoechoic")]
+        public bool? Hypoechoic { get; set; }
+
+        [JsonPropertyName("markedly_hypoechoic")]
+        public bool? MarkedlyHypoechoic { get; set; }
+    }
+
+    public class SegmentationDto
+    {
+        [JsonPropertyName("method")]
+        public string? Method { get; set; }
+
+        [JsonPropertyName("roi_extraction")]
+        public string? RoiExtraction { get; set; }
     }
 
     public class ImageUrlsDto

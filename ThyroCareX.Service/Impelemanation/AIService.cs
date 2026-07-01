@@ -33,7 +33,7 @@ namespace ThyroCareX.Service.Impelemanation
             var apiKey = _configuration["AISettings:ApiKey"];
             _httpClient.DefaultRequestHeaders.Add("X-AI-Service-Key", apiKey);
         }
-        public async Task<List<ImageAIResponse>> PredictImageAsync(IEnumerable<string> imagePaths)
+        public async Task<List<ImageAIResponse>> PredictImageAsync(IEnumerable<string> imagePaths, string sessionId)
         {
             using var form = new MultipartFormDataContent();
             
@@ -53,6 +53,8 @@ namespace ThyroCareX.Service.Impelemanation
 
                 form.Add(byteContent, "files", Path.GetFileName(fullPath));
             }
+
+            form.Add(new StringContent(sessionId ?? string.Empty), "session_id");
 
             var response = await _httpClient.PostAsync(
                 "https://amer003100-thyraxcdss.hf.space/image/predict?force=false",
@@ -378,8 +380,9 @@ namespace ThyroCareX.Service.Impelemanation
                 return value;
             }
 
-            if (!value.StartsWith("/")) value = "/" + value;
-            return $"https://amer003100-thyraxcdss.hf.space{value}";
+            var parts = value.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            var imageId = parts.LastOrDefault() ?? "0";
+            return $"/api/TestsWithAI/ViewImage/{imageId}";
         }
 
     }

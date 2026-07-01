@@ -75,7 +75,7 @@ namespace ThyroCareX.Core.Feature.TestWithAI.Commands.Handler
             List<ImageAIResponse> aiResponses;
             try
             {
-                aiResponses = await _aiService.PredictImageAsync(newImagePaths);
+                aiResponses = await _aiService.PredictImageAsync(newImagePaths, request.SessionId);
             }
             catch (Exception ex)
             {

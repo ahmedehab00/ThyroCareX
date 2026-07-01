@@ -13,8 +13,8 @@ namespace ThyroCareX.Service.Abstarct
 {
     public interface IAIService
     {
-        Task<List<ImageAIResponse>> PredictImageAsync(IEnumerable<string> imagePaths);
         Task<ClinicalAIResponse> AssessClinicalAsync(ClinicalRequest request);
+        Task<List<ImageAIResponse>> PredictImageAsync(IEnumerable<string> imagePaths, string sessionId);
         Task<FnacAIResponse> PredictFnacAsync(string imagePath);
         Task<List<ThyroCareX.Service.Impelemanation.UltrasoundValidationResponse>> ValidateUltrasoundAsync(IEnumerable<string> imagePaths);
         Task<ChatAIResponse> ChatAsync(string query, string sessionId, string chatHistory, string? imagePath = null);

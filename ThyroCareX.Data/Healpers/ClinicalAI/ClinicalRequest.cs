@@ -12,6 +12,9 @@ namespace ThyroCareX.Data.Healpers.ClinicalAI
         [JsonPropertyName("patient_id")]
         public string PatientId { get; set; }
 
+        [JsonPropertyName("session_id")]
+        public string SessionId { get; set; }
+
         public int Age { get; set; }
 
         [JsonPropertyName("on_thyroxine")]

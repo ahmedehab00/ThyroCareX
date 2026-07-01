@@ -9,6 +9,7 @@ namespace ThyroCareX.Core.Feature.TestWithAI.Commands.Models
     public class PredictImageCommand : IRequest<Response<List<ImageAIResponse>>>
     {
         public int TestId { get; set; }
+        public string SessionId { get; set; }
         public List<IFormFile> UltraSoundImages { get; set; }
     }
 }
