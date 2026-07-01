@@ -76,5 +76,62 @@ namespace ThyroCareX.Controllers
                 await Response.Body.FlushAsync();
             }
         }
+
+        /// <summary>
+        /// Chats with the ThyraX AI medical agent about a specific patient (Non-Streaming).
+        /// </summary>
+        /// <param name="command">Chat parameters including session ID and user message.</param>
+        /// <returns>JSON response from the agent.</returns>
+        [HttpPost("AgentChat")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> AgentChat([FromBody] AgentChatRequestDto command)
+        {
+            if (!await IsPremiumDoctorOrAdmin())
+            {
+                return StatusCode(403, "Active subscription required.");
+            }
+
+            var result = await _aiService.AgentChatAsync(command.user_message, command.session_id, command.patient_id);
+            return Ok(result);
+        }
+
+        [HttpGet("Sessions/{patientId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetPatientSessions(int patientId)
+        {
+            if (!await IsPremiumDoctorOrAdmin())
+                return StatusCode(403, "Active subscription required.");
+
+            var sessions = await _aiService.GetPatientSessionsAsync(patientId);
+            var dtos = sessions.Select(s => new ThyroCareX.Core.Dto.AiChat.AgentSessionDto
+            {
+                Id = s.Id,
+                PatientId = s.PatientId,
+                Title = s.Title,
+                CreatedAt = s.CreatedAt
+            }).ToList();
+            
+            return Ok(dtos);
+        }
+
+        [HttpGet("Messages/{sessionId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetSessionMessages(string sessionId)
+        {
+            if (!await IsPremiumDoctorOrAdmin())
+                return StatusCode(403, "Active subscription required.");
+
+            var messages = await _aiService.GetSessionMessagesAsync(sessionId);
+            var dtos = messages.Select(m => new ThyroCareX.Core.Dto.AiChat.AgentChatMessageDto
+            {
+                Id = m.Id,
+                SessionId = m.SessionId,
+                Role = m.Role,
+                Content = m.Content,
+                CreatedAt = m.CreatedAt
+            }).ToList();
+            
+            return Ok(dtos);
+        }
     }
 }

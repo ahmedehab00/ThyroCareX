@@ -8,6 +8,7 @@ using ThyroCareX.Core.Dto.ImageAIResponse;
 using ThyroCareX.Data.Healpers.ClinicalAI;
 using ThyroCareX.Data.Healpers.ClinicalAIResponse;
 using ThyroCareX.Core.Dto;
+using ThyroCareX.Data.Healpers.AiChat;
 
 namespace ThyroCareX.Service.Abstarct
 {
@@ -19,5 +20,8 @@ namespace ThyroCareX.Service.Abstarct
         Task<List<ThyroCareX.Service.Impelemanation.UltrasoundValidationResponse>> ValidateUltrasoundAsync(IEnumerable<string> imagePaths);
         Task<ChatAIResponse> ChatAsync(string query, string sessionId, string chatHistory, string? imagePath = null);
         IAsyncEnumerable<string> StreamChatAsync(string userMessage, string? sessionId);
+        Task<AgentChatResponseDto> AgentChatAsync(string userMessage, string sessionId, int patientId);
+        Task<List<ThyroCareX.Data.Models.AgentSession>> GetPatientSessionsAsync(int patientId);
+        Task<List<ThyroCareX.Data.Models.AgentChatMessage>> GetSessionMessagesAsync(string sessionId);
     }
 }

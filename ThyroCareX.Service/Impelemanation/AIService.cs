@@ -12,9 +12,14 @@ using ThyroCareX.Core.Dto.ImageAIResponse;
 using ThyroCareX.Data.Healpers.ClinicalAI;
 using ThyroCareX.Data.Healpers.ClinicalAIResponse;
 using ThyroCareX.Core.Dto;
+using ThyroCareX.Data.Healpers.AiChat;
 using ThyroCareX.Service.Abstarct;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Hosting;
+using ThyroCareX.Infrastructure.Context;
+using ThyroCareX.Data.Models;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 
 namespace ThyroCareX.Service.Impelemanation
 {
@@ -23,12 +28,14 @@ namespace ThyroCareX.Service.Impelemanation
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _env;
+        private readonly ApplicationDbContext _dbContext;
 
-        public AIService(HttpClient httpClient, IConfiguration configuration, IWebHostEnvironment env)
+        public AIService(HttpClient httpClient, IConfiguration configuration, IWebHostEnvironment env, ApplicationDbContext dbContext)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _env = env;
+            _dbContext = dbContext;
 
             var apiKey = _configuration["AISettings:ApiKey"];
             _httpClient.DefaultRequestHeaders.Add("X-AI-Service-Key", apiKey);
@@ -233,13 +240,13 @@ namespace ThyroCareX.Service.Impelemanation
 
         public async IAsyncEnumerable<string> StreamChatAsync(string userMessage, string? sessionId)
         {
-            // Only send user_message to HF — our internal session_id is unknown to HF and causes 422
             var payload = new
             {
+                session_id = sessionId ?? Guid.NewGuid().ToString(),
                 user_message = userMessage
             };
 
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://amer003100-thyraxcdss.hf.space/agent/chat");
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://amer003100-thyraxcdss.hf.space/ai/chat");
             request.Headers.Add("accept", "application/json");
             request.Content = JsonContent.Create(payload);
 
@@ -390,6 +397,74 @@ namespace ThyroCareX.Service.Impelemanation
             var parts = value.Split('/', StringSplitOptions.RemoveEmptyEntries);
             var imageId = parts.LastOrDefault() ?? "0";
             return $"/api/TestsWithAI/ViewImage/{imageId}";
+        }
+
+        public async Task<AgentChatResponseDto> AgentChatAsync(string userMessage, string sessionId, int patientId)
+        {
+            var payload = new { session_id = sessionId, user_message = userMessage };
+            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("https://amer003100-thyraxcdss.hf.space/agent/chat", content);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException($"AI Agent Chat Error ({response.StatusCode}): {error}");
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<AgentChatResponseDto>();
+            
+            if (result != null && result.status == "success")
+            {
+                var session = await _dbContext.AgentSessions.FindAsync(sessionId);
+                if (session == null)
+                {
+                    session = new ThyroCareX.Data.Models.AgentSession
+                    {
+                        Id = sessionId,
+                        PatientId = patientId,
+                        Title = userMessage.Length > 30 ? userMessage.Substring(0, 30) + "..." : userMessage,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _dbContext.AgentSessions.Add(session);
+                }
+
+                _dbContext.AgentChatMessages.Add(new ThyroCareX.Data.Models.AgentChatMessage
+                {
+                    SessionId = sessionId,
+                    Role = "user",
+                    Content = userMessage,
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                _dbContext.AgentChatMessages.Add(new ThyroCareX.Data.Models.AgentChatMessage
+                {
+                    SessionId = sessionId,
+                    Role = "ai",
+                    Content = result.response,
+                    CreatedAt = DateTime.UtcNow.AddMilliseconds(100) // Ensure AI message comes strictly after
+                });
+
+                await _dbContext.SaveChangesAsync();
+            }
+
+            return result ?? new AgentChatResponseDto { status = "error", response = "Failed to parse response." };
+        }
+
+        public async Task<List<ThyroCareX.Data.Models.AgentSession>> GetPatientSessionsAsync(int patientId)
+        {
+            return await _dbContext.AgentSessions
+                .Where(s => s.PatientId == patientId)
+                .OrderByDescending(s => s.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<List<ThyroCareX.Data.Models.AgentChatMessage>> GetSessionMessagesAsync(string sessionId)
+        {
+            return await _dbContext.AgentChatMessages
+                .Where(m => m.SessionId == sessionId)
+                .OrderBy(m => m.CreatedAt)
+                .ToListAsync();
         }
 
     }
