@@ -238,11 +238,36 @@ namespace ThyroCareX.Service.Impelemanation
             return await response.Content.ReadFromJsonAsync<ChatAIResponse>();
         }
 
-        public async IAsyncEnumerable<string> StreamChatAsync(string userMessage, string? sessionId)
+        public async IAsyncEnumerable<string> StreamChatAsync(string userMessage, string? sessionId, int userId)
         {
+            var isNewSession = string.IsNullOrEmpty(sessionId) || !await _dbContext.GeneralAiSessions.AnyAsync(s => s.Id == sessionId);
+            if (string.IsNullOrEmpty(sessionId)) sessionId = Guid.NewGuid().ToString();
+
+            var session = await _dbContext.GeneralAiSessions.FindAsync(sessionId);
+            if (session == null)
+            {
+                session = new GeneralAiSession
+                {
+                    Id = sessionId,
+                    UserId = userId,
+                    Title = userMessage.Length > 30 ? userMessage.Substring(0, 30) + "..." : userMessage,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _dbContext.GeneralAiSessions.Add(session);
+            }
+
+            _dbContext.GeneralAiChatMessages.Add(new GeneralAiChatMessage
+            {
+                SessionId = sessionId,
+                Role = "user",
+                Content = userMessage,
+                CreatedAt = DateTime.UtcNow
+            });
+            await _dbContext.SaveChangesAsync();
+
             var payload = new
             {
-                session_id = sessionId ?? Guid.NewGuid().ToString(),
+                session_id = sessionId,
                 user_message = userMessage
             };
 
@@ -266,22 +291,65 @@ namespace ThyroCareX.Service.Impelemanation
 
             if (isError)
             {
-                yield return $"data: {{\"status\": \"error\", \"message\": \"AI connection failed: {errorText}. Please try again.\"}}\n";
+                yield return $"data: {{\"status\": \"error\", \"message\": \"AI connection failed: {errorText}. Please try again.\"}}\n\n";
                 yield break;
             }
 
             using var stream = await response.Content.ReadAsStreamAsync();
             using var reader = new StreamReader(stream);
+            var aiResponseBuilder = new StringBuilder();
 
             while (!reader.EndOfStream)
             {
                 var line = await reader.ReadLineAsync();
                 if (!string.IsNullOrEmpty(line))
                 {
-                    // Yield each SSE line with proper double-newline so client can parse correctly
                     yield return line + "\n\n";
+                    if (line.StartsWith("data: ") && line != "data: [DONE]")
+                    {
+                        try
+                        {
+                            var jsonString = line.Substring(6);
+                            using var doc = JsonDocument.Parse(jsonString);
+                            if (doc.RootElement.TryGetProperty("token", out var token))
+                            {
+                                aiResponseBuilder.Append(token.GetString());
+                            }
+                        }
+                        catch { }
+                    }
                 }
             }
+
+            // Save AI response
+            var fullResponse = aiResponseBuilder.ToString();
+            if (!string.IsNullOrEmpty(fullResponse))
+            {
+                _dbContext.GeneralAiChatMessages.Add(new GeneralAiChatMessage
+                {
+                    SessionId = sessionId,
+                    Role = "ai",
+                    Content = fullResponse,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _dbContext.SaveChangesAsync();
+            }
+        }
+
+        public async Task<List<GeneralAiSession>> GetGeneralSessionsAsync(int userId)
+        {
+            return await _dbContext.GeneralAiSessions
+                .Where(s => s.UserId == userId)
+                .OrderByDescending(s => s.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<List<GeneralAiChatMessage>> GetGeneralSessionMessagesAsync(string sessionId)
+        {
+            return await _dbContext.GeneralAiChatMessages
+                .Where(m => m.SessionId == sessionId)
+                .OrderBy(m => m.CreatedAt)
+                .ToListAsync();
         }
 
         private static string? TryGetString(JsonElement element, string propertyName)

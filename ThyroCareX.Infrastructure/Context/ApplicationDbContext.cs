@@ -31,6 +31,8 @@ namespace ThyroCareX.Infrastructure.Context
         public DbSet<Message> Messages { get; set; }
         public DbSet<AgentSession> AgentSessions { get; set; }
         public DbSet<AgentChatMessage> AgentChatMessages { get; set; }
+        public DbSet<GeneralAiSession> GeneralAiSessions { get; set; }
+        public DbSet<GeneralAiChatMessage> GeneralAiChatMessages { get; set; }
 
 
 

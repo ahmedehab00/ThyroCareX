@@ -66,22 +66,25 @@ namespace ThyroCareX.Controllers
                 return;
             }
 
+            var userIdString = _userContextService.UserId;
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
+            {
+                Response.StatusCode = 401;
+                await Response.WriteAsync("User not authenticated.");
+                return;
+            }
+
             Response.ContentType = "text/event-stream";
             Response.Headers["Cache-Control"] = "no-cache";
             Response.Headers["X-Accel-Buffering"] = "no";
 
-            await foreach (var chunk in _aiService.StreamChatAsync(command.user_message, command.session_id))
+            await foreach (var chunk in _aiService.StreamChatAsync(command.user_message, command.session_id, userId))
             {
                 await Response.WriteAsync(chunk);
                 await Response.Body.FlushAsync();
             }
         }
 
-        /// <summary>
-        /// Chats with the ThyraX AI medical agent about a specific patient (Non-Streaming).
-        /// </summary>
-        /// <param name="command">Chat parameters including session ID and user message.</param>
-        /// <returns>JSON response from the agent.</returns>
         [HttpPost("AgentChat")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> AgentChat([FromBody] AgentChatRequestDto command)
@@ -124,6 +127,47 @@ namespace ThyroCareX.Controllers
             var messages = await _aiService.GetSessionMessagesAsync(sessionId);
             var dtos = messages.Select(m => new ThyroCareX.Core.Dto.AiChat.AgentChatMessageDto
             {
+                Id = m.Id,
+                SessionId = m.SessionId,
+                Role = m.Role,
+                Content = m.Content,
+                CreatedAt = m.CreatedAt
+            }).ToList();
+            
+            return Ok(dtos);
+        }
+
+        [HttpGet("GeneralSessions")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetGeneralSessions()
+        {
+            if (!await IsPremiumDoctorOrAdmin())
+                return StatusCode(403, "Active subscription required.");
+
+            var userIdString = _userContextService.UserId;
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
+                return Unauthorized();
+
+            var sessions = await _aiService.GetGeneralSessionsAsync(userId);
+            var dtos = sessions.Select(s => new {
+                Id = s.Id,
+                UserId = s.UserId,
+                Title = s.Title,
+                CreatedAt = s.CreatedAt
+            }).ToList();
+            
+            return Ok(dtos);
+        }
+
+        [HttpGet("GeneralMessages/{sessionId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetGeneralMessages(string sessionId)
+        {
+            if (!await IsPremiumDoctorOrAdmin())
+                return StatusCode(403, "Active subscription required.");
+
+            var messages = await _aiService.GetGeneralSessionMessagesAsync(sessionId);
+            var dtos = messages.Select(m => new {
                 Id = m.Id,
                 SessionId = m.SessionId,
                 Role = m.Role,
