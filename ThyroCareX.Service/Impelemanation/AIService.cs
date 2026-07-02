@@ -271,7 +271,7 @@ namespace ThyroCareX.Service.Impelemanation
                 user_message = userMessage
             };
 
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://amer003100-thyraxcdss.hf.space/ai/chat");
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://amer003100-thyraxcdss.hf.space/agent/chat");
             request.Headers.Add("accept", "application/json");
             request.Content = JsonContent.Create(payload);
 
