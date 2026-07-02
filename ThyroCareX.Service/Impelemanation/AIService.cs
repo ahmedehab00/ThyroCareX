@@ -469,7 +469,7 @@ namespace ThyroCareX.Service.Impelemanation
 
         public async Task<AgentChatResponseDto> AgentChatAsync(string userMessage, string sessionId, int patientId)
         {
-            var payload = new { session_id = sessionId, user_message = userMessage };
+            var payload = new { session_id = sessionId, user_message = userMessage, patient_id = patientId, stream = false };
             var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PostAsync("https://amer003100-thyraxcdss.hf.space/agent/chat", content);
@@ -480,9 +480,72 @@ namespace ThyroCareX.Service.Impelemanation
                 throw new HttpRequestException($"AI Agent Chat Error ({response.StatusCode}): {error}");
             }
 
-            var result = await response.Content.ReadFromJsonAsync<AgentChatResponseDto>();
+            var rawContent = await response.Content.ReadAsStringAsync();
+            var aiResponseBuilder = new StringBuilder();
+            var toolsUsed = new List<string>();
+
+            using var reader = new StringReader(rawContent);
+            while (true)
+            {
+                var line = reader.ReadLine();
+                if (line == null) break;
+
+                if (line.StartsWith("data: ") && line != "data: [DONE]")
+                {
+                    try
+                    {
+                        var jsonString = line.Substring(6);
+                        using var doc = JsonDocument.Parse(jsonString);
+                        
+                        if (doc.RootElement.TryGetProperty("token", out var token))
+                        {
+                            aiResponseBuilder.Append(token.GetString());
+                        }
+                        
+                        if (doc.RootElement.TryGetProperty("tool", out var tool))
+                        {
+                            var toolStr = tool.GetString();
+                            if (!string.IsNullOrEmpty(toolStr) && !toolsUsed.Contains(toolStr))
+                                toolsUsed.Add(toolStr);
+                        }
+                        
+                        if (doc.RootElement.TryGetProperty("tools_used", out var toolsArray) && toolsArray.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var item in toolsArray.EnumerateArray())
+                            {
+                                var t = item.GetString();
+                                if (!string.IsNullOrEmpty(t) && !toolsUsed.Contains(t))
+                                    toolsUsed.Add(t);
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            var fullResponse = aiResponseBuilder.ToString().Trim();
             
-            if (result != null && result.status == "success")
+            // If we got nothing from stream, maybe it wasn't a stream but regular JSON? Let's check if it started with '{'
+            if (string.IsNullOrEmpty(fullResponse) && rawContent.TrimStart().StartsWith("{"))
+            {
+                try
+                {
+                    var resultJson = JsonSerializer.Deserialize<AgentChatResponseDto>(rawContent);
+                    fullResponse = resultJson?.response ?? "Empty response";
+                    toolsUsed = resultJson?.tools_used ?? new List<string>();
+                }
+                catch { }
+            }
+
+            var result = new AgentChatResponseDto 
+            { 
+                status = string.IsNullOrEmpty(fullResponse) ? "error" : "success", 
+                response = string.IsNullOrEmpty(fullResponse) ? "Failed to get response from AI." : fullResponse,
+                tools_used = toolsUsed,
+                query = userMessage
+            };
+            
+            if (result.status == "success")
             {
                 var session = await _dbContext.AgentSessions.FindAsync(sessionId);
                 if (session == null)
@@ -510,13 +573,13 @@ namespace ThyroCareX.Service.Impelemanation
                     SessionId = sessionId,
                     Role = "ai",
                     Content = result.response,
-                    CreatedAt = DateTime.UtcNow.AddMilliseconds(100) // Ensure AI message comes strictly after
+                    CreatedAt = DateTime.UtcNow.AddMilliseconds(100)
                 });
 
                 await _dbContext.SaveChangesAsync();
             }
 
-            return result ?? new AgentChatResponseDto { status = "error", response = "Failed to parse response." };
+            return result;
         }
 
         public async Task<List<ThyroCareX.Data.Models.AgentSession>> GetPatientSessionsAsync(int patientId)
