@@ -271,7 +271,7 @@ namespace ThyroCareX.Service.Impelemanation
                 user_message = userMessage
             };
 
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://amer003100-thyraxcdss.hf.space/agent/chat");
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://amer003100-thyraxcdss.hf.space/ai/chat/dictionary");
             request.Headers.Add("accept", "application/json");
             request.Content = JsonContent.Create(payload);
 
@@ -427,11 +427,23 @@ namespace ThyroCareX.Service.Impelemanation
         {
             if (root.TryGetProperty("images", out var images) && images.ValueKind == JsonValueKind.Object)
             {
+                var annotatedUrl = TryGetString(images, "annotated_url");
+                var overlayUrl = TryGetString(images, "overlay_url") ?? annotatedUrl;
+
+                var maskOverlayUrl = TryGetString(images, "mask_overlay_url");
+                var maskUrl = TryGetString(images, "mask_url") ?? maskOverlayUrl;
+
+                var originalUrl = TryGetString(images, "original_url");
+                var roiUrl = TryGetString(images, "roi_url") ?? originalUrl;
+
                 return new ImageUrlsDto
                 {
-                    Overlay_Url = TryGetString(images, "overlay_url") ?? string.Empty,
-                    Mask_Url = TryGetString(images, "mask_url") ?? string.Empty,
-                    Roi_Url = TryGetString(images, "roi_url") ?? string.Empty
+                    Overlay_Url = overlayUrl ?? string.Empty,
+                    Mask_Url = maskUrl ?? string.Empty,
+                    Roi_Url = roiUrl ?? string.Empty,
+                    Original_Url = originalUrl ?? string.Empty,
+                    Mask_Overlay_Url = maskOverlayUrl ?? string.Empty,
+                    Annotated_Url = annotatedUrl ?? string.Empty
                 };
             }
 
@@ -439,7 +451,10 @@ namespace ThyroCareX.Service.Impelemanation
             {
                 Overlay_Url = string.Empty,
                 Mask_Url = string.Empty,
-                Roi_Url = string.Empty
+                Roi_Url = string.Empty,
+                Original_Url = string.Empty,
+                Mask_Overlay_Url = string.Empty,
+                Annotated_Url = string.Empty
             };
         }
 
@@ -447,9 +462,17 @@ namespace ThyroCareX.Service.Impelemanation
         {
             if (response.Images == null) return;
 
+            // Fallback for direct deserialization where new keys were parsed but old were missing
+            if (string.IsNullOrEmpty(response.Images.Overlay_Url)) response.Images.Overlay_Url = response.Images.Annotated_Url;
+            if (string.IsNullOrEmpty(response.Images.Mask_Url)) response.Images.Mask_Url = response.Images.Mask_Overlay_Url;
+            if (string.IsNullOrEmpty(response.Images.Roi_Url)) response.Images.Roi_Url = response.Images.Original_Url;
+
             response.Images.Overlay_Url = NormalizeUrl(response.Images.Overlay_Url);
             response.Images.Mask_Url = NormalizeUrl(response.Images.Mask_Url);
             response.Images.Roi_Url = NormalizeUrl(response.Images.Roi_Url);
+            response.Images.Original_Url = NormalizeUrl(response.Images.Original_Url);
+            response.Images.Mask_Overlay_Url = NormalizeUrl(response.Images.Mask_Overlay_Url);
+            response.Images.Annotated_Url = NormalizeUrl(response.Images.Annotated_Url);
         }
 
         private static string NormalizeUrl(string? value)

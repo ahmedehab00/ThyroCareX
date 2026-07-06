@@ -96,12 +96,21 @@ namespace ThyroCareX.Core.Dto.ImageAIResponse
     public class ImageUrlsDto
     {
         [JsonPropertyName("mask_url")]
-        public string Mask_Url { get; set; }
+        public string? Mask_Url { get; set; }
 
         [JsonPropertyName("overlay_url")]
-        public string Overlay_Url { get; set; }
+        public string? Overlay_Url { get; set; }
 
         [JsonPropertyName("roi_url")]
-        public string Roi_Url { get; set; }
+        public string? Roi_Url { get; set; }
+
+        [JsonPropertyName("original_url")]
+        public string? Original_Url { get; set; }
+
+        [JsonPropertyName("mask_overlay_url")]
+        public string? Mask_Overlay_Url { get; set; }
+
+        [JsonPropertyName("annotated_url")]
+        public string? Annotated_Url { get; set; }
     }
 }
