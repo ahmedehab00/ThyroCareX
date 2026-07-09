@@ -74,5 +74,8 @@ namespace ThyroCareX.Core.Feature.Patients.Queries.Result
         public string? OverlayImageUrl { get; set; }
         public string? MaskImageUrl { get; set; }
         public string? RoiImageUrl { get; set; }
+        public string? AtaLevel { get; set; }
+        public bool NeedsManualReview { get; set; }
+        public string? Consensus { get; set; }
     }
 }

@@ -80,7 +80,10 @@ namespace ThyroCareX.Controllers
                     RiskLevel = t.RiskLevel,
                     OverlayImageUrl = t.OverlayImageUrl,
                     MaskImageUrl = t.MaskImageUrl,
-                    RoiImageUrl = t.RoiImageUrl
+                    RoiImageUrl = t.RoiImageUrl,
+                    AtaLevel = t.AtaLevel,
+                    NeedsManualReview = t.NeedsManualReview,
+                    Consensus = t.Consensus
                 }).ToList() ?? new(),
                 LatestDiagnosisResult = latestTest?.DiagnosisResult,
                 LatestConfidence      = latestTest?.Confidence,

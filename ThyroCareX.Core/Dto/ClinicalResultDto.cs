@@ -32,5 +32,26 @@ namespace ThyroCareX.Core.Dto
         
         [JsonPropertyName("probabilities")]
         public Dictionary<string, double> Probabilities { get; set; }
+
+        [JsonPropertyName("next_step_details")]
+        public NextStepDetailsDto NextStepDetails { get; set; }
+    }
+
+    public class NextStepDetailsDto
+    {
+        [JsonPropertyName("action")]
+        public string Action { get; set; }
+
+        [JsonPropertyName("endpoint")]
+        public string Endpoint { get; set; }
+
+        [JsonPropertyName("rationale")]
+        public string Rationale { get; set; }
+
+        [JsonPropertyName("cancer_pipeline_triggered")]
+        public bool CancerPipelineTriggered { get; set; }
+
+        [JsonPropertyName("urgency")]
+        public string Urgency { get; set; }
     }
 }

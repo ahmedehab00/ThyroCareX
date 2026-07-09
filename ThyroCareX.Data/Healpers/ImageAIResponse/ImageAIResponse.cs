@@ -27,6 +27,21 @@ namespace ThyroCareX.Core.Dto.ImageAIResponse
 
         [JsonPropertyName("medical_disclaimer")]
         public string? MedicalDisclaimer { get; set; }
+
+        [JsonPropertyName("consensus")]
+        public ConsensusDto? Consensus { get; set; }
+    }
+
+    public class ConsensusDto
+    {
+        [JsonPropertyName("label")]
+        public string? Label { get; set; }
+
+        [JsonPropertyName("confidence_pct")]
+        public double? ConfidencePct { get; set; }
+
+        [JsonPropertyName("clinical_recommendation")]
+        public string? ClinicalRecommendation { get; set; }
     }
 
     public class ClassificationDto
@@ -40,6 +55,9 @@ namespace ThyroCareX.Core.Dto.ImageAIResponse
 
         [JsonPropertyName("acr_tirads_level")]
         public string Tirads_Stage { get; set; }
+
+        [JsonPropertyName("ata_level")]
+        public string Ata_Level { get; set; }
 
         [JsonPropertyName("risk_level")]
         public string RiskLevel { get; set; }
